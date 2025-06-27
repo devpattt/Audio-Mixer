@@ -3,22 +3,18 @@ import mediapipe as mp
 import pygame
 import math
 
-# === Audio Setup ===
 pygame.mixer.init()
-pygame.mixer.music.load('music.mp3')  # Your audio file here
+pygame.mixer.music.load('music.mp3') 
 pygame.mixer.music.play(-1)
 pygame.mixer.music.set_volume(0.5)
 
-# === MediaPipe Hand Setup ===
 mp_hands = mp.solutions.hands
 hands = mp_hands.Hands(max_num_hands=2, min_detection_confidence=0.7, min_tracking_confidence=0.7)
 mp_draw = mp.solutions.drawing_utils
 
-# === Webcam Setup ===
 cap = cv2.VideoCapture(0)
 
-# Simulated pitch level
-pitch_level = 1.0  # default pitch (1.0x)
+pitch_level = 1.0 
 
 while True:
     ret, frame = cap.read()
@@ -34,26 +30,22 @@ while True:
 
     if results.multi_hand_landmarks and results.multi_handedness:
         for idx, hand_landmarks in enumerate(results.multi_hand_landmarks):
-            # Detect left/right
-            label = results.multi_handedness[idx].classification[0].label  # 'Left' or 'Right'
+
+            label = results.multi_handedness[idx].classification[0].label 
             mp_draw.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
 
-            # Thumb and index tip landmarks
             thumb = hand_landmarks.landmark[4]
             index = hand_landmarks.landmark[8]
             x1, y1 = int(thumb.x * w), int(thumb.y * h)
             x2, y2 = int(index.x * w), int(index.y * h)
 
-            # Draw line and dots
             cv2.line(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
             cv2.circle(frame, (x1, y1), 10, (255, 0, 0), -1)
             cv2.circle(frame, (x2, y2), 10, (255, 0, 0), -1)
 
-            # Midpoint
             mid_x, mid_y = (x1 + x2) // 2, (y1 + y2) // 2
             hand_positions.append((mid_x, mid_y))
 
-            # Distance
             distance = math.hypot(x2 - x1, y2 - y1)
             value = min(max((distance - 20) / 180, 0.0), 1.0)
 
@@ -62,11 +54,9 @@ while True:
                 cv2.putText(frame, f'Volume: {int(value * 100)}%', (10, 40),
                             cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
             else:
-                pitch_level = 0.5 + value * 1.5  # Range: 0.5x to 2.0x
+                pitch_level = 0.5 + value * 1.5  
                 cv2.putText(frame, f'Pitch (sim): {pitch_level:.2f}x', (10, 80),
                             cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 100, 100), 2)
-
-    # === Fancy Spectrum Between Hands ===
     if len(hand_positions) == 2:
         x1, y1 = hand_positions[0]
         x2, y2 = hand_positions[1]
@@ -87,8 +77,7 @@ while True:
 
             cv2.rectangle(frame, (bx - bar_width // 2, by - bar_height),
                           (bx + bar_width // 2, by + bar_height), color, -1)
-
-    # Show video
+            
     cv2.imshow("Dual Hand Audio Control with Spectrum", frame)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
